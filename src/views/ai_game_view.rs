@@ -1,10 +1,12 @@
+use std::thread;
+use std::time::Duration;
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
-use ratatui::crossterm::event::KeyCode::F;
 use ratatui::Frame;
-use ratatui::layout::{Constraint, Direction, Layout, Margin, Rect};
+use ratatui::layout::{Alignment, Constraint, Direction, Flex, Layout, Margin, Rect};
+use ratatui::prelude::Color;
 use ratatui::style::Style;
-use ratatui::text::{Line, Text};
-use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
+use ratatui::text::{Line, Span, Text};
+use ratatui::widgets::{Block, BorderType, Borders, Gauge, Paragraph, Wrap};
 use crate::enums::field::FieldMark;
 use crate::enums::player::Player;
 use crate::enums::view_action::ViewAction;
@@ -14,6 +16,7 @@ use crate::traits::view_model::ViewModel;
 pub struct AiGameView{
     game: Game,
     field_selection: u8,
+    ai_thinking_gauge: u16,
 }
 
 impl AiGameView{
@@ -22,6 +25,7 @@ impl AiGameView{
         AiGameView{
             game: Game::new(),
             field_selection: 7,
+            ai_thinking_gauge: 0,
         }
     }
 
@@ -55,18 +59,18 @@ impl AiGameView{
     }
 
     fn get_your_turn_text<'a>() -> Text<'a>{
-        let title: Vec<Line> = vec![
+        let title = [
             Line::from("__   __                 _                    "),
             Line::from("\\ \\ / /__  _   _ _ __  | |_ _   _ _ __ _ __  "),
             Line::from(" \\ V / _ \\| | | | '__| | __| | | | '__| '_ \\ "),
             Line::from("  | | (_) | |_| | |    | |_| |_| | |  | | | |"),
             Line::from("  |_|\\___/ \\__,_|_|     \\__|\\__,_|_|  |_| |_|"),
         ];
-        Text::from(title).style(Self::get_player_style())
+        Text::from_iter(title).style(Self::get_player_style())
     }
 
     fn get_enemy_turn_text<'a>() -> Text<'a>{
-        let title: Vec<Line> = vec![
+        let title = [
             Line::from(" _____                              _                    "),
             Line::from("| ____|_ __   ___ _ __ ___  _   _  | |_ _   _ _ __ _ __  "),
             Line::from("|  _| | '_ \\ / _ \\ '_ ` _ \\| | | | | __| | | | '__| '_ \\ "),
@@ -74,61 +78,61 @@ impl AiGameView{
             Line::from("|_____|_| |_|\\___|_| |_| |_|\\__, |  \\__|\\__,_|_|  |_| |_|"),
             Line::from("                            |___/                        ")
         ];
-        Text::from(title).style(Self::get_opponent_style())
+        Text::from_iter(title).style(Self::get_opponent_style())
     }
 
     fn get_win_text<'a>() -> Text<'a>{
-        let title: Vec<Line> = vec![
+        let title = [
             Line::from("__   __                                "),
             Line::from("\\ \\ / /__  _   _  __      _____  _ __  "),
             Line::from(" \\ V / _ \\| | | | \\ \\ /\\ / / _ \\| '_ \\ "),
             Line::from("  | | (_) | |_| |  \\ V  V / (_) | | | |"),
             Line::from("  |_|\\___/ \\__,_|   \\_/\\_/ \\___/|_| |_|"),
         ];
-        Text::from(title).style(Style::new().green())
+        Text::from_iter(title).style(Style::new().green())
     }
 
     fn get_lost_text<'a>() -> Text<'a>{
-        let title: Vec<Line> = vec![
+        let title = [
             Line::from("__   __            _           _   "),
             Line::from("\\ \\ / /__  _   _  | | ___  ___| |_ "),
             Line::from(" \\ V / _ \\| | | | | |/ _ \\/ __| __|"),
             Line::from("  | | (_) | |_| | | | (_) \\__ \\ |_ "),
             Line::from("  |_|\\___/ \\__,_| |_|\\___/|___/\\__|"),
         ];
-        Text::from(title).style(Style::new().red())
+        Text::from_iter(title).style(Style::new().red())
     }
 
     fn get_draw_text<'a>() -> Text<'a>{
-        let title: Vec<Line> = vec![
+        let title = [
             Line::from(" ____  ____      ___        __"),
             Line::from("|  _ \\|  _ \\    / \\ \\      / /"),
             Line::from("| | | | |_) |  / _ \\ \\ /\\ / / "),
             Line::from("| |_| |  _ <  / ___ \\ V  V /"),
             Line::from("|____/|_| \\_\\/_/   \\_\\_/\\_/   ")
         ];
-        Text::from(title).style(Style::new().gray())
+        Text::from_iter(title).style(Style::new().gray())
     }
 
     fn get_x<'a>() -> Text<'a>{
-        let x: Vec<Line> = vec![
+        let x = [
             Line::from("__  __"),
             Line::from("\\ \\/ /"),
             Line::from(" >  < "),
             Line::from("/_/\\_\\"),
         ];
 
-        Text::from(x)
+        Text::from_iter(x)
     }
 
     fn get_o<'a>() -> Text<'a>{
-        let o: Vec<Line> = vec![
+        let o = [
             Line::from("  ___  "),
             Line::from(" / _ \\ "),
             Line::from("| (_) |"),
             Line::from(" \\___/ "),
         ];
-        Text::from(o)
+        Text::from_iter(o)
     }
 
     fn get_field_mark_art(&self, field_mark: &FieldMark) -> Text{
@@ -139,6 +143,116 @@ impl AiGameView{
         };
         let style = if field_mark == &self.game.player_mark {Self::get_player_style()} else {Self::get_opponent_style()};
         mark.style(style)
+    }
+
+    fn get_controls_text<'a>() -> Text<'a>{
+        let controls: Vec<Line> = vec![
+            Line::from(vec![Span::styled("←,↑,↓,→",Style::new().fg(Color::Magenta)),Span::styled(" - select tile",Style::new())]),
+            Line::from(""),
+            Line::from(vec![Span::styled("Enter",Style::new().fg(Color::Magenta)),Span::styled(" - confirm selection",Style::new())]),
+            Line::from(""),
+            Line::from(vec![Span::styled("ESC",Style::new().fg(Color::Magenta)),Span::styled(" - exit the game",Style::new())])
+        ];
+        Text::from(controls)
+    }
+
+    fn get_smiley_face<'a>() -> Text<'a>{
+        let face = [
+            Line::from("     ██      ██     "),
+            Line::from("     ██      ██     "),
+            Line::from("                    "),
+            Line::from("██                ██"),
+            Line::from(" ██              ██ "),
+            Line::from("  ████████████████  ")
+        ];
+        Text::from_iter(face)
+    }
+
+    fn get_thinking_face<'a>() -> Text<'a>{
+        let face = [
+            Line::from("                 ███"),
+            Line::from("                   █"),
+            Line::from("    ██   ██      ███"),
+            Line::from("    ██   ██      █  "),
+            Line::from("                    "),
+            Line::from("                 █  "),
+            Line::from("  ████████████      ")
+        ];
+        Text::from_iter(face)
+    }
+
+    fn get_happy_face<'a>() -> Text<'a>{
+        let face = [
+            Line::from("   ███    ███   "),
+            Line::from("   ███    ███   "),
+            Line::from("                "),
+            Line::from("█              █"),
+            Line::from("███          ███"),
+            Line::from("  ████████████  ")
+        ];
+        Text::from_iter(face)
+    }
+
+    fn get_angry_face<'a>() -> Text<'a>{
+        let face = [
+            Line::from("    █      █    "),
+            Line::from("     █    █     "),
+            Line::from("   ██ █  █ ██   "),
+            Line::from("   ██      ██   "),
+            Line::from("                "),
+            Line::from(" ████ ██████  ██"),
+            Line::from("██  █████  ████ "),
+        ];
+        Text::from_iter(face)
+    }
+
+    fn draw_ai_status(&mut self, frame: &mut Frame, right_top: Rect){
+        let right_top_separation = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(9), Constraint::Fill(1),  Constraint::Length(1)])
+            .split(right_top.inner(Margin::new(1,1)));
+
+        self.draw_ai_face(right_top_separation[0],frame);
+
+        let text = Paragraph::new("Waiting for turn...");
+        frame.render_widget(text.centered(),right_top_separation[1].centered_vertically(Constraint::Length(1)));
+
+        self.draw_gauge_and_advance_thinking(right_top_separation[2],frame);
+    }
+
+    fn draw_ai_face(&mut self, area: Rect, frame: &mut Frame){
+        let mut face= Self::get_smiley_face();
+        if(self.game.winner.is_none()){
+            if(self.game.current_player == Player::Player){
+                face = Self::get_smiley_face();
+            }
+            else{
+                face = Self::get_thinking_face();
+            }
+        }
+        else{
+            if let Some(winner) = self.game.winner{
+                if(winner == self.game.opponent_mark){
+                    face = Self::get_happy_face();
+                }
+                else{
+                    face = Self::get_angry_face();
+                }
+            }
+        }
+
+        let face = face.style(Self::get_opponent_style());
+        frame.render_widget(face.centered(),area.inner(Margin::new(0,1)));
+    }
+
+    fn draw_gauge_and_advance_thinking(&mut self, area: Rect, frame:&mut Frame){
+        if(self.game.current_player == Player::Opponent && self.game.winner.is_none()){
+            let gauge = Gauge::default()
+                .percent(self.ai_thinking_gauge)
+                .style(Self::get_opponent_style());
+            frame.render_widget(gauge, area.centered_vertically(Constraint::Length(1)));
+            self.update_ai_gauge_and_wait(10);
+        }
     }
 
     fn get_player_style() -> Style{
@@ -183,7 +297,7 @@ impl AiGameView{
 
             let mark_art = self.get_field_mark_art(mark);
 
-            frame.render_widget(Paragraph::new(mark_art).block(block),field);
+            frame.render_widget(Paragraph::new(mark_art).centered().block(block),field);
 
         }
 
@@ -210,7 +324,7 @@ impl AiGameView{
     }
 
     fn player_make_move(&mut self){
-        if(self.field_selection >= 0 && self.field_selection < 9){
+        if(self.field_selection < 9){
             if let Err(message) = self.game.make_move(self.field_selection){
                 self.draw_error_text(message);
             }
@@ -218,7 +332,7 @@ impl AiGameView{
     }
 
     fn opponent_make_move(&mut self){
-        if(self.game.winner.is_none() && self.game.current_player == Player::Opponent){
+        if(self.game.winner.is_none() && self.game.current_player == Player::Opponent && self.ai_thinking_gauge == 100){
             let ai_move = self.game.get_ai_move(Player::Opponent);
             match ai_move {
                 None => {}
@@ -229,7 +343,14 @@ impl AiGameView{
                     }
                 }
             }
+            self.ai_thinking_gauge = 0;
         }
+
+    }
+
+    fn update_ai_gauge_and_wait(&mut self, amount: u16){
+        self.ai_thinking_gauge += amount;
+        thread::sleep(Duration::from_millis(100));
     }
 
     fn handle_input_your_turn(&mut self, key: KeyEvent) -> ViewAction{
@@ -288,12 +409,28 @@ impl ViewModel for AiGameView{
         let board_area = left_area_rects[1]
             .centered_horizontally(Constraint::Length(33));
 
-        let right_area_center = right_area
-            .centered(Constraint::Percentage(50),Constraint::Percentage(50));
 
         //Drawing left/right separation
-        frame.render_widget(Block::new().borders(Borders::ALL).border_type(BorderType::Rounded), left_area);
-        frame.render_widget(Block::new().borders(Borders::ALL).border_type(BorderType::Rounded), right_area);
+        frame.render_widget(Block::new().borders(Borders::ALL).border_type(BorderType::Rounded).title("Game"), left_area);
+
+        let separated_right_area = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(right_area);
+        let right_top = separated_right_area[0];
+        let right_bottom = separated_right_area[1];
+
+        frame.render_widget(Block::new().borders(Borders::ALL).border_type(BorderType::Rounded).title("AI Status").title_alignment(Alignment::Center), right_top);
+        frame.render_widget(Block::new().borders(Borders::ALL).border_type(BorderType::Rounded).title("Controls").title_alignment(Alignment::Center), right_bottom);
+
+        //Drawing ai status
+        self.draw_ai_status(frame,right_top);
+
+        //Drawing right screen controls
+        let controls_rect = right_bottom.inner(Margin::new(2,2));
+
+        let controls_paragraph = Paragraph::new(Self::get_controls_text()).wrap(Wrap { trim: true });
+        frame.render_widget(controls_paragraph.centered(), controls_rect);
 
         //Drawing text above board
         let text = self.get_top_text();
@@ -308,15 +445,14 @@ impl ViewModel for AiGameView{
 
     }
     fn handle_inputs(&mut self, key: KeyEvent) -> ViewAction {
-        if(self.game.winner.is_some()){
-            return self.handle_input_end(key);
+        return if(self.game.winner.is_some()){
+            self.handle_input_end(key)
         }else if(self.game.current_player == Player::Player){
-            return self.handle_input_your_turn(key);
+            self.handle_input_your_turn(key)
         }else {
-            return self.handle_input_enemy_turn(key);
-        }
+            self.handle_input_enemy_turn(key)
+        };
 
-        ViewAction::Nothing
     }
 
     fn additional_actions(&mut self) {

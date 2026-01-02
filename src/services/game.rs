@@ -48,12 +48,7 @@ impl Game{
     fn check_if_game_already_won(&mut self){
         let potential_winner: Option<FieldMark> = self.check_win(&self.board);
         if let Some(winner) = potential_winner{
-            match potential_winner {
-                None => {}
-                Some(mark) => {
-                    self.winner = Some(mark);
-                }
-            }
+            self.winner = Some(winner);
         }
     }
 
@@ -62,6 +57,10 @@ impl Game{
         let my_mark = if player == Player::Player {self.player_mark} else {self.opponent_mark};
         let enemy_mark = if player == Player::Player {self.opponent_mark} else {self.player_mark};
         let mut empty_spaces: Vec<u8> = Vec::new();
+
+
+        //TODO:write it better
+        //Attack
         for (i, mark) in self.board.iter().enumerate(){
             if(matches!(mark,FieldMark::Empty)){
                 empty_spaces.push(i as u8);
@@ -69,31 +68,29 @@ impl Game{
                 let mut board_copy = self.board.clone();
                 board_copy[i] = my_mark.clone();
                 if let Some(winning_mark) = self.check_win(&board_copy){
-                    //IDK how enemy can win by our move but
                     if winning_mark == my_mark{
                         return Some(i as u8);
                     }
                 }
+            }
+        }
 
+        //Defense
+        for (i, mark) in self.board.iter().enumerate() {
+            if (matches!(mark,FieldMark::Empty)) {
+                let mut board_copy = self.board.clone();
                 board_copy[i] = enemy_mark.clone();
                 if let Some(winning_mark) = self.check_win(&board_copy){
-                    //IDK how enemy can win by our move but
                     if winning_mark != my_mark{
                         return Some(i as u8);
                     }
                 }
-
             }
         }
-
         empty_spaces.random()
     }
 
     fn check_win(&self, board: &[FieldMark; 9]) -> Option<FieldMark>{
-        if board.iter().filter(|&mark| *mark != FieldMark::Empty).count() == 9{
-            return Some(FieldMark::Empty);
-        }
-
         for i in 0..=2{
             if(board[0+(3*i)] == board[1+(3*i)] && board[1+(3*i)] == board[2+(3*i)] && board[2+(3*i)] != FieldMark::Empty){
                 return Some(board[0+(3*i)]);
@@ -107,6 +104,10 @@ impl Game{
             if(board[0 + (i*2)] == board[4] && board[4] == board[8 - (i*2)] && board[8- (i*2)] != FieldMark::Empty){
                 return Some(board[4]);
             }
+        }
+
+        if board.iter().filter(|&mark| *mark != FieldMark::Empty).count() == 9{
+            return Some(FieldMark::Empty);
         }
 
         None

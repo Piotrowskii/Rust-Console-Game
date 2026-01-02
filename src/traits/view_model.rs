@@ -11,7 +11,7 @@ pub trait ViewModel{
     fn additional_actions(&mut self);
 
     fn handle_events(&mut self) -> Result<ViewAction, std::io::Error>{
-        if event::poll(Duration::from_millis(0))? {
+        if event::poll(Duration::from_millis(16))? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press{
                     return Ok(self.handle_inputs(key))
