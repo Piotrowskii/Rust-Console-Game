@@ -58,31 +58,22 @@ impl Game{
         let enemy_mark = if player == Player::Player {self.opponent_mark} else {self.player_mark};
         let mut empty_spaces: Vec<u8> = Vec::new();
 
+        for i in 0..2{
+            let checking_mark = if i == 0 {my_mark} else {enemy_mark};
 
-        //TODO:write it better
-        //Attack
-        for (i, mark) in self.board.iter().enumerate(){
-            if(matches!(mark,FieldMark::Empty)){
-                empty_spaces.push(i as u8);
+            for (j, mark) in self.board.iter().enumerate(){
+                if(matches!(mark,FieldMark::Empty)){
 
-                let mut board_copy = self.board.clone();
-                board_copy[i] = my_mark.clone();
-                if let Some(winning_mark) = self.check_win(&board_copy){
-                    if winning_mark == my_mark{
-                        return Some(i as u8);
+                    if(i == 0){
+                        empty_spaces.push(j as u8);
                     }
-                }
-            }
-        }
 
-        //Defense
-        for (i, mark) in self.board.iter().enumerate() {
-            if (matches!(mark,FieldMark::Empty)) {
-                let mut board_copy = self.board.clone();
-                board_copy[i] = enemy_mark.clone();
-                if let Some(winning_mark) = self.check_win(&board_copy){
-                    if winning_mark != my_mark{
-                        return Some(i as u8);
+                    let mut board_copy = self.board.clone();
+                    board_copy[j] = checking_mark.clone();
+                    if let Some(winning_mark) = self.check_win(&board_copy){
+                        if winning_mark == checking_mark{
+                            return Some(j as u8);
+                        }
                     }
                 }
             }

@@ -4,6 +4,7 @@ use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::Style;
 use ratatui::text::{Line, Text};
 use ratatui::widgets::{Block, BorderType, Borders, List, ListState};
+use crate::enums::player_type::PlayerType;
 use crate::enums::view_action::ViewAction;
 use crate::traits::view_model::ViewModel;
 
@@ -17,7 +18,7 @@ pub struct MainView{
 pub enum MenuOption{
     StartAiGame,
     StartLocalGame,
-    Login,
+    Settings,
     Quit,
     About
 }
@@ -29,7 +30,7 @@ impl MenuOption{
             MenuOption::StartLocalGame => "Start Local Co-op game",
             MenuOption::Quit => "Quit",
             MenuOption::About => "About project",
-            MenuOption::Login => "Login (to save progress)"
+            MenuOption::Settings => "Settings"
         }
     }
 }
@@ -40,7 +41,7 @@ impl MainView{
         list_state.select(Some(0));
 
         MainView{
-            list_options: vec![MenuOption::StartAiGame,MenuOption::StartLocalGame,MenuOption::Login,MenuOption::About,MenuOption::Quit],
+            list_options: vec![MenuOption::StartAiGame,MenuOption::StartLocalGame,MenuOption::Settings,MenuOption::About,MenuOption::Quit],
             main_list: list_state
         }
     }
@@ -49,11 +50,11 @@ impl MainView{
         match selected {
             Some(option) => {
                 match option {
-                    MenuOption::StartAiGame => ViewAction::GoToAiGame,
-                    MenuOption::StartLocalGame => ViewAction::GoToAiGame,
-                    MenuOption::Login => ViewAction::GoToAiGame,
+                    MenuOption::StartAiGame => ViewAction::GoToGame(PlayerType::Ai),
+                    MenuOption::StartLocalGame => ViewAction::GoToGame(PlayerType::Human),
+                    MenuOption::Settings => ViewAction::GoToSettings,
                     MenuOption::Quit => ViewAction::Quit,
-                    MenuOption::About => ViewAction::GoToAiGame
+                    MenuOption::About => ViewAction::Quit
                 }
             }
             _ => ViewAction::Nothing
@@ -85,13 +86,11 @@ impl ViewModel for MainView{
         let main_layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Percentage(75),
-                Constraint::Percentage(25),
+                Constraint::Percentage(100),
             ])
             .split(frame.area());
 
         let left_area = main_layout[0];
-        let right_area = main_layout[1];
         let left_area_rects = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -116,7 +115,6 @@ impl ViewModel for MainView{
         frame.render_stateful_widget(list, left_area_bottom, &mut self.main_list);
 
         frame.render_widget(Block::new().borders(Borders::ALL).border_type(BorderType::Rounded), left_area);
-        frame.render_widget(Block::new().borders(Borders::ALL).border_type(BorderType::Rounded), right_area);
 
     }
     fn handle_inputs(&mut self, key: KeyEvent) -> ViewAction {
