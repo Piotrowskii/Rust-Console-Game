@@ -4,33 +4,34 @@ mod traits;
 mod enums;
 mod helpers;
 
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::thread;
 use std::time::Duration;
-use ratatui::style::{Color, Style};
+use ratatui::style::{Color};
+use crate::enums::player::Player;
 use crate::enums::player_type::PlayerType;
 use crate::enums::view_action::ViewAction;
 use crate::services::settings::Settings;
 use crate::traits::view_model::ViewModel;
 use crate::views::game_view::AiGameView;
 use crate::views::main_view::MainView;
+use crate::views::settings_view::SettingsView;
 
 pub struct AppState{
     current_view: Box<dyn ViewModel>,
-    settings: Rc<Settings>,
+    settings: Rc<RefCell<Settings>>,
     running: bool,
 }
 
 impl AppState{
     pub fn new() -> AppState{
         let mut settings = Settings::new();
-        settings.change_player_style(Style::new().fg(Color::Cyan));
-        settings.change_opponent_style(Style::new().fg(Color::Yellow));
 
         AppState{
             current_view: Box::new(MainView::new()),
             running: true,
-            settings: Rc::new(settings)
+            settings: Rc::new(RefCell::new(settings))
         }
     }
 
@@ -40,7 +41,15 @@ impl AppState{
             ViewAction::GoToGame(player_type) => {self.go_to_game_view(player_type)}
             ViewAction::GoToSettings => {self.go_to_settings()}
             ViewAction::Quit => {self.running = false}
-            ViewAction::Nothing => {}
+            ViewAction::Nothing => {},
+            ViewAction::ChangeColor((color,player)) => {self.change_color(color,player)}
+        }
+    }
+
+    fn change_color(&mut self, color: Color, player: Player) {
+        match player {
+            Player::Player => {self.settings.borrow_mut().player_color = color;},
+            Player::Opponent => {self.settings.borrow_mut().change_opponent_style(color)},
         }
     }
 
@@ -50,7 +59,8 @@ impl AppState{
     }
 
     fn go_to_settings(&mut self){
-
+        let view_mode = SettingsView::new();
+        self.current_view = Box::new(view_mode);
     }
 
     fn go_to_game_view(&mut self, player_type: PlayerType){

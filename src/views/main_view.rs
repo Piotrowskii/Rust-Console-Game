@@ -7,6 +7,7 @@ use ratatui::widgets::{Block, BorderType, Borders, List, ListState};
 use crate::enums::player_type::PlayerType;
 use crate::enums::view_action::ViewAction;
 use crate::traits::view_model::ViewModel;
+use crate::services::game_art as Art;
 
 pub struct MainView{
     main_list: ListState,
@@ -20,7 +21,6 @@ pub enum MenuOption{
     StartLocalGame,
     Settings,
     Quit,
-    About
 }
 
 impl MenuOption{
@@ -29,7 +29,6 @@ impl MenuOption{
             MenuOption::StartAiGame => "Start Game with Ai",
             MenuOption::StartLocalGame => "Start Local Co-op game",
             MenuOption::Quit => "Quit",
-            MenuOption::About => "About project",
             MenuOption::Settings => "Settings"
         }
     }
@@ -41,7 +40,7 @@ impl MainView{
         list_state.select(Some(0));
 
         MainView{
-            list_options: vec![MenuOption::StartAiGame,MenuOption::StartLocalGame,MenuOption::Settings,MenuOption::About,MenuOption::Quit],
+            list_options: vec![MenuOption::StartAiGame,MenuOption::StartLocalGame,MenuOption::Settings,MenuOption::Quit],
             main_list: list_state
         }
     }
@@ -54,7 +53,6 @@ impl MainView{
                     MenuOption::StartLocalGame => ViewAction::GoToGame(PlayerType::Human),
                     MenuOption::Settings => ViewAction::GoToSettings,
                     MenuOption::Quit => ViewAction::Quit,
-                    MenuOption::About => ViewAction::Quit
                 }
             }
             _ => ViewAction::Nothing
@@ -72,36 +70,20 @@ impl MainView{
 }
 impl ViewModel for MainView{
     fn render_widgets(&mut self, frame: &mut Frame){
-        let title: Vec<Line> = vec![
-            Line::from("  _______ _        _______           _______         "),
-            Line::from(" |__   __(_)      |__   __|         |__   __|        "),
-            Line::from("    | |   _  ___     | | __ _  ___     | | ___   ___ "),
-            Line::from("    | |  | |/ __|    | |/ _` |/ __|    | |/ _ \\ / _ \\"),
-            Line::from("    | |  | | (__     | | (_| | (__     | | (_) |  __/"),
-            Line::from("    |_|  |_|\\___|    |_|\\__,_|\\___|    |_|\\___/ \\___|")
-        ];
 
-        let title = Text::from(title);
+        let title = Art::tic_tac_toe();
 
-        let main_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage(100),
-            ])
-            .split(frame.area());
-
-        let left_area = main_layout[0];
-        let left_area_rects = Layout::default()
+        let main_layout_rects = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Percentage(50),
                 Constraint::Percentage(50),
             ])
-            .split(left_area);
+            .split(frame.area());
 
-        let left_area_top = left_area_rects[0]
+        let left_area_top = main_layout_rects[0]
             .centered(Constraint::Length(title.width() as u16),Constraint::Percentage(50));
-        let left_area_bottom = left_area_rects[1]
+        let left_area_bottom = main_layout_rects[1]
             .centered(Constraint::Percentage(75),Constraint::Percentage(75));
 
         frame.render_widget(title, left_area_top);
@@ -114,7 +96,7 @@ impl ViewModel for MainView{
 
         frame.render_stateful_widget(list, left_area_bottom, &mut self.main_list);
 
-        frame.render_widget(Block::new().borders(Borders::ALL).border_type(BorderType::Rounded), left_area);
+        frame.render_widget(Block::new().borders(Borders::ALL).border_type(BorderType::Rounded), frame.area());
 
     }
     fn handle_inputs(&mut self, key: KeyEvent) -> ViewAction {

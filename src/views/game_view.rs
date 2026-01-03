@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::thread;
 use std::time::Duration;
@@ -20,14 +21,14 @@ use crate::services::settings::Settings;
 pub struct AiGameView{
     game: Game,
     opponent_type: PlayerType,
-    settings: Rc<Settings>,
+    settings: Rc<RefCell<Settings>>,
     field_selection: u8,
     ai_thinking_gauge: u16,
 }
 
 impl AiGameView{
 
-    pub fn new(opponent_type: PlayerType, settings: Rc<Settings>) -> AiGameView{
+    pub fn new(opponent_type: PlayerType, settings: Rc<RefCell<Settings>>) -> AiGameView{
         AiGameView{
             game: Game::new(),
             field_selection: 7,
@@ -91,17 +92,20 @@ impl AiGameView{
 
     fn draw_ai_status(&mut self, frame: &mut Frame, right_top: Rect){
         if(self.opponent_type != PlayerType::Ai){
-            return;
+            let right_top_middle = right_top.centered_vertically(Constraint::Length(3)).inner(Margin::new(1,1));
+           frame.render_widget(Paragraph::new("OFFLINE").centered(),right_top_middle);
+        }
+        else{
+            let right_top_separation = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Length(9), Constraint::Fill(1),  Constraint::Length(1)])
+                .split(right_top.inner(Margin::new(1,1)));
+
+            self.draw_ai_face_and_text(right_top_separation[1],right_top_separation[0],frame);
+
+            self.draw_ai_gauge_and_advance_thinking(right_top_separation[2],frame);
         }
 
-        let right_top_separation = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Length(9), Constraint::Fill(1),  Constraint::Length(1)])
-            .split(right_top.inner(Margin::new(1,1)));
-
-        self.draw_ai_face_and_text(right_top_separation[1],right_top_separation[0],frame);
-
-        self.draw_ai_gauge_and_advance_thinking(right_top_separation[2],frame);
     }
     fn draw_ai_face_and_text(&mut self, text_area: Rect, face_area: Rect, frame: &mut Frame){
         let mut face = Art::smiley_face();
@@ -120,7 +124,7 @@ impl AiGameView{
             if let Some(winner) = self.game.winner{
                 if(winner == self.game.opponent_mark){
                     face = Art::happy_face();
-                    ai_text = "Yey i won, you suck";
+                    ai_text = "Yay i won, you suck";
                 }
                 else if(winner == FieldMark::Empty){
                     face = Art::angry_face();
@@ -155,11 +159,11 @@ impl AiGameView{
     }
 
     fn get_player_style(&self) -> Style{
-        self.settings.player_style.clone()
+        Style::new().fg(self.settings.borrow().player_color.clone())
     }
 
     fn get_opponent_style(&self) -> Style{
-        self.settings.opponent_style.clone()
+        Style::new().fg(self.settings.borrow().opponent_color.clone())
     }
 
     fn get_style_by_mark(&self, field_mark: FieldMark) -> Style{

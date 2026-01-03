@@ -2,6 +2,32 @@ use ratatui::prelude::{Color, Line, Span, Style};
 use ratatui::text::Text;
 use crate::enums::field::FieldMark;
 
+const TIC_TAC_TOE: [&str; 6] = [
+    "  _______ _        _______           _______         ",
+    " |__   __(_)      |__   __|         |__   __|        ",
+    "    | |   _  ___     | | __ _  ___     | | ___   ___ ",
+    "    | |  | |/ __|    | |/ _` |/ __|    | |/ _ \\ / _ \\",
+    "    | |  | | (__     | | (_| | (__     | | (_) |  __/",
+    "    |_|  |_|\\___|    |_|\\__,_|\\___|    |_|\\___/ \\___|"
+];
+
+pub fn tic_tac_toe() -> Text<'static>{
+    Text::from_iter(TIC_TAC_TOE)
+}
+
+const SETTINGS: [&str; 6] = [
+    " ____       _   _   _                 ",
+    "/ ___|  ___| |_| |_(_)_ __   __ _ ___ ",
+    "\\___ \\ / _ \\ __| __| | '_ \\ / _` / __|",
+    " ___) |  __/ |_| |_| | | | | (_| \\__ \\",
+    "|____/ \\___|\\__|\\__|_|_| |_|\\__, |___/",
+    "                            |___/     ",
+];
+
+pub fn settings() -> Text<'static>{
+    Text::from_iter(SETTINGS)
+}
+
 const YOUR_TURN: [&str; 5] = [
     "__   __                 _                    ",
     "\\ \\ / /__  _   _ _ __  | |_ _   _ _ __ _ __  ",
