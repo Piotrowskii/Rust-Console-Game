@@ -68,7 +68,7 @@ impl AiGameView{
     }
 
 
-    fn get_field_mark_art(&self, field_mark: &FieldMark) -> Text{
+    fn get_field_mark_art(&self, field_mark: &FieldMark) -> Text<'static>{
         let mark = match field_mark {
             FieldMark::X => {Art::x()},
             FieldMark::O => {Art::o()}
@@ -120,22 +120,21 @@ impl AiGameView{
                 ai_text = "calculating move";
             };
         }
-        else{
-            if let Some(winner) = self.game.winner{
-                if(winner == self.game.opponent_mark){
-                    face = Art::happy_face();
-                    ai_text = "Yay i won, you suck";
-                }
-                else if(winner == FieldMark::Empty){
-                    face = Art::angry_face();
-                    ai_text = "You are as bad as me";
-                }
-                else{
-                    face = Art::angry_face();
-                    ai_text = "I will remember that";
-                }
+        else if let Some(winner) = self.game.winner{
+            if(winner == self.game.opponent_mark){
+                face = Art::happy_face();
+                ai_text = "Yay i won, you suck";
+            }
+            else if(winner == FieldMark::Empty){
+                face = Art::angry_face();
+                ai_text = "You are as bad as me";
+            }
+            else{
+                face = Art::angry_face();
+                ai_text = "I will remember that";
             }
         }
+
 
         let face = face.style(self.get_opponent_style());
         frame.render_widget(face.centered(),face_area.inner(Margin::new(0,1)));
@@ -159,11 +158,11 @@ impl AiGameView{
     }
 
     fn get_player_style(&self) -> Style{
-        Style::new().fg(self.settings.borrow().player_color.clone())
+        Style::new().fg(self.settings.borrow().player_color)
     }
 
     fn get_opponent_style(&self) -> Style{
-        Style::new().fg(self.settings.borrow().opponent_color.clone())
+        Style::new().fg(self.settings.borrow().opponent_color)
     }
 
     fn get_style_by_mark(&self, field_mark: FieldMark) -> Style{
@@ -258,13 +257,11 @@ impl AiGameView{
                 block.style(self.get_opponent_style())
             }
         }
+        else if(self.game.current_player == Player::Player){
+            block.style(self.get_player_style())
+        }
         else{
-            if(self.game.current_player == Player::Player){
-                block.style(self.get_player_style())
-            }
-            else{
-                block
-            }
+            block
         }
     }
 
@@ -285,10 +282,8 @@ impl AiGameView{
     }
 
     fn player_make_move(&mut self){
-        if(self.field_selection < 9){
-            if let Err(message) = self.game.make_move(self.field_selection){
-                self.draw_error_text(message);
-            }
+        if self.field_selection < 9 && let Err(message) = self.game.make_move(self.field_selection){
+            self.draw_error_text(message);
         }
     }
 
@@ -405,7 +400,7 @@ impl ViewModel for AiGameView{
 
     }
     fn handle_inputs(&mut self, key: KeyEvent) -> ViewAction {
-        return if(self.game.winner.is_some()){
+        if(self.game.winner.is_some()){
             self.handle_input_end(key)
         }else if(self.game.current_player == Player::Player){
             self.handle_input_your_turn(key)
@@ -416,7 +411,7 @@ impl ViewModel for AiGameView{
                 self.handle_input_your_turn(key)
             }
 
-        };
+        }
 
     }
 
