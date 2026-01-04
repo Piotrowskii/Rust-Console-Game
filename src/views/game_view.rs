@@ -68,13 +68,13 @@ impl AiGameView{
     }
 
 
-    fn get_field_mark_art(&self, field_mark: &FieldMark) -> Text<'static>{
+    fn get_field_mark_art(&self, field_mark: FieldMark) -> Text<'static>{
         let mark = match field_mark {
             FieldMark::X => {Art::x()},
             FieldMark::O => {Art::o()}
             FieldMark::Empty => {Text::from("")}
         };
-        let style = self.get_style_by_mark(*field_mark);
+        let style = self.get_style_by_mark(field_mark);
         mark.style(style)
     }
 
@@ -241,7 +241,7 @@ impl AiGameView{
                 block = self.color_board_tile(block);
             }
 
-            let mark_art = self.get_field_mark_art(mark);
+            let mark_art = self.get_field_mark_art(*mark);
 
             frame.render_widget(Paragraph::new(mark_art).centered().block(block),field);
 

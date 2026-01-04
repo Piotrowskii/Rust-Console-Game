@@ -1,6 +1,5 @@
-use ratatui::prelude::{Color, Line, Span, Style};
 use ratatui::text::Text;
-use crate::enums::field::FieldMark;
+
 
 const TIC_TAC_TOE: [&str; 6] = [
     "  _______ _        _______           _______         ",

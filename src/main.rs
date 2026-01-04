@@ -26,7 +26,7 @@ pub struct AppState{
 
 impl AppState{
     pub fn new() -> AppState{
-        let mut settings = Settings::new();
+        let settings = Settings::new();
 
         AppState{
             current_view: Box::new(MainView::new()),
@@ -48,7 +48,7 @@ impl AppState{
 
     fn change_color(&mut self, color: Color, player: Player) {
         match player {
-            Player::Player => {self.settings.borrow_mut().player_color = color;},
+            Player::Player => {self.settings.borrow_mut().change_player_style(color)},
             Player::Opponent => {self.settings.borrow_mut().change_opponent_style(color)},
         }
     }

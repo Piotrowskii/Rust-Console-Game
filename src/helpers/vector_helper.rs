@@ -6,7 +6,7 @@ pub trait VecExt<T>{
 
 impl<T: Clone> VecExt<T> for Vec<T>{
     fn random(&self) -> Option<T>{
-        if(self.len() == 0){
+        if(self.is_empty()){
             return None
         }
         let mut rng = rand::rng();

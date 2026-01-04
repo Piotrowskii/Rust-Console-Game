@@ -2,7 +2,6 @@ use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Margin, Rect};
 use ratatui::style::Style;
-use ratatui::text::{Line, Text};
 use ratatui::widgets::{Block, BorderType, Borders, List, ListState, Paragraph};
 use crate::enums::player_type::PlayerType;
 use crate::enums::view_action::ViewAction;

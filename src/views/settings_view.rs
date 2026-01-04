@@ -1,11 +1,9 @@
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use ratatui::Frame;
-use ratatui::layout::{Alignment, Constraint, Direction, Layout, Margin, Rect};
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Margin};
 use ratatui::style::{Color, Style, Styled};
-use ratatui::text::{Line, Text};
 use ratatui::widgets::{Block, BorderType, Borders, Clear, List, ListState};
 use crate::enums::player::Player;
-use crate::enums::player_type::PlayerType;
 use crate::enums::view_action::ViewAction;
 use crate::traits::view_model::ViewModel;
 use crate::services::game_art as Art;

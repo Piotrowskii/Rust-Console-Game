@@ -70,10 +70,8 @@ impl Game{
 
                     let mut board_copy = self.board.clone();
                     board_copy[j] = checking_mark.clone();
-                    if let Some(winning_mark) = self.check_win(&board_copy){
-                        if winning_mark == checking_mark{
-                            return Some(j as u8);
-                        }
+                    if let Some(winning_mark) = self.check_win(&board_copy) && winning_mark == checking_mark{
+                        return Some(j as u8);
                     }
                 }
             }
