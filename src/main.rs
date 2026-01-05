@@ -27,12 +27,13 @@ pub struct AppState{
 impl AppState{
     pub fn new() -> AppState{
         let settings = Settings::new();
-
+        
         AppState{
             current_view: Box::new(MainView::new()),
             running: true,
             settings: Rc::new(RefCell::new(settings))
         }
+        
     }
 
     pub fn handle_view_action(&mut self, action: ViewAction){
